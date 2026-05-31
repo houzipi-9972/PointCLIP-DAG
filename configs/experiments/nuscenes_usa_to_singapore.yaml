@@ -1,0 +1,70 @@
+_base_: ../default.yaml
+experiment_name: nuscenes_usa_to_singapore_ov_dg
+
+vocab:
+  train: configs/vocab/nuscenes/raw_lidarseg_16.yaml
+  eval: configs/vocab/nuscenes/raw_lidarseg_16.yaml
+
+vocabulary:
+  train_vocab_path: configs/vocab/nuscenes/raw_lidarseg_16.yaml
+  eval_vocab_path: configs/vocab/nuscenes/raw_lidarseg_16.yaml
+  prompt_templates:
+    - "a photo of a {}."
+    - "a point cloud of a {}."
+    - "a driving scene with {}."
+
+data:
+  use_legacy_unidseg_6class_mapping: false
+  ignore_index: -100
+  source:
+    type: NuScenesLidarSegSCN
+    train: [train_usa]
+    kwargs:
+      preprocess_dir: /home/zhangshuai/Sysu_4T/houych/nuscenes/preprocess
+      nuscenes_dir: /home/zhangshuai/Sysu_4T/houych/nuscenes
+      nuscenes_devkit:
+        version: v1.0-trainval
+        required: true
+      scale: 20
+      full_scale: 4096
+      resize: [400, 225]
+      fliplr: 0.5
+      color_jitter: [0.4, 0.4, 0.4]
+      noisy_rot: 0.1
+      flip_x: 0.5
+      rot_z: 6.28318530718
+      transl: true
+  target:
+    type: NuScenesLidarSegSCN
+    val: [val_singapore]
+    test: [test_singapore]
+    kwargs:
+      preprocess_dir: /home/zhangshuai/Sysu_4T/houych/nuscenes/preprocess
+      nuscenes_dir: /home/zhangshuai/Sysu_4T/houych/nuscenes
+      nuscenes_devkit:
+        version: v1.0-trainval
+        required: true
+      scale: 20
+      full_scale: 4096
+      resize: [400, 225]
+      fliplr: 0.0
+      color_jitter:
+
+train:
+  epochs: 20
+  max_iters: 100000
+  batch_size: 8
+  log_period: 50
+  checkpoint_period: 5000
+
+eval:
+  allow_eval_vocab_different_from_train: true
+  compute_seen_unseen_miou: true
+  split: val
+  batch_size: 8
+  period: 5000
+
+scheduler:
+  type: MultiStepLR
+  milestones: [80000, 90000]
+  gamma: 0.1

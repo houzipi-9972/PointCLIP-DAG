@@ -1,0 +1,17 @@
+torch>=1.9
+torchvision>=0.10
+numpy
+pyyaml
+pillow
+timm==0.4.12
+nuscenes-devkit
+git+https://github.com/openai/CLIP.git
+ftfy
+regex
+tqdm
+matplotlib
+opencv-python-headless
+# Required by the formal UniDSeg SpUNet backend on the CUDA 11.1 environment.
+spconv-cu111==2.1.25
+# Optional if configs/model.text_encoder.backend is set to open_clip:
+# open_clip_torch

@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments and local editor state
+.env
+.venv/
+env/
+venv/
+.idea/
+.vscode/
+
+# Project outputs
+/runs/
+/outputs/
+/logs/
+*.log
+*.tmp
+
+# Large local assets
+/weights/
+/checkpoints/
+*.pth
+*.pt
+*.ckpt
+*.onnx
+
+# External cloned repos
+/third_party/
+
+# Data
+/data/
+/datasets/
+*.pkl
+*.npy
+*.npz
+*.ply
+
+# OS
+.DS_Store
+Thumbs.db

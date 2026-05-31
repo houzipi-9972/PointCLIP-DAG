@@ -1,0 +1,53 @@
+prompt_templates:
+  - "a photo of a {}."
+  - "a point cloud of a {}."
+  - "a driving scene with {}."
+classes:
+  - name: terrain
+    train_id: 0
+    aliases: ["ground terrain", "natural terrain"]
+    seen: true
+  - name: tree
+    train_id: 1
+    aliases: ["tree"]
+    seen: true
+  - name: vegetation
+    train_id: 2
+    aliases: ["plants", "green vegetation"]
+    seen: true
+  - name: building
+    train_id: 3
+    aliases: ["building facade", "manmade building"]
+    seen: true
+  - name: road
+    train_id: 4
+    aliases: ["road surface", "drivable road"]
+    seen: true
+  - name: guardrail
+    train_id: 5
+    aliases: ["road guard rail", "guard rail"]
+    seen: true
+  - name: traffic sign
+    train_id: 6
+    aliases: ["traffic-sign", "road sign"]
+    seen: true
+  - name: traffic light
+    train_id: 7
+    aliases: ["traffic-light", "signal light"]
+    seen: true
+  - name: pole
+    train_id: 8
+    aliases: ["street pole", "traffic pole"]
+    seen: true
+  - name: truck
+    train_id: 10
+    aliases: ["lorry", "large vehicle"]
+    seen: true
+  - name: car
+    train_id: 11
+    aliases: ["automobile", "vehicle car"]
+    seen: true
+  - name: van
+    train_id: 12
+    aliases: ["vehicle van"]
+    seen: true

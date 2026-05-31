@@ -1,0 +1,85 @@
+prompt_templates:
+  - "a photo of a {}."
+  - "a point cloud of a {}."
+  - "a driving scene with {}."
+classes:
+  - name: car
+    train_id: 10
+    aliases: ["vehicle car", "automobile"]
+    seen: true
+  - name: bicycle
+    train_id: 11
+    aliases: ["bike"]
+    seen: false
+  - name: bus
+    train_id: 13
+    aliases: ["city bus"]
+    seen: false
+  - name: motorcycle
+    train_id: 15
+    aliases: ["motorbike"]
+    seen: false
+  - name: truck
+    train_id: 18
+    aliases: ["large vehicle", "lorry"]
+    seen: true
+  - name: other vehicle
+    train_id: 20
+    aliases: ["other road vehicle"]
+    seen: false
+  - name: person
+    train_id: 30
+    aliases: ["pedestrian"]
+    seen: false
+  - name: bicyclist
+    train_id: 31
+    aliases: ["person riding a bicycle"]
+    seen: false
+  - name: motorcyclist
+    train_id: 32
+    aliases: ["person riding a motorcycle"]
+    seen: false
+  - name: road
+    train_id: 40
+    aliases: ["drivable road", "road surface"]
+    seen: true
+  - name: parking
+    train_id: 44
+    aliases: ["parking area"]
+    seen: false
+  - name: sidewalk
+    train_id: 48
+    aliases: ["walkway", "pedestrian sidewalk"]
+    seen: false
+  - name: other ground
+    train_id: 49
+    aliases: ["ground surface"]
+    seen: false
+  - name: building
+    train_id: 50
+    aliases: ["building facade", "manmade building"]
+    seen: true
+  - name: fence
+    train_id: 51
+    aliases: ["roadside fence"]
+    seen: false
+  - name: vegetation
+    train_id: 70
+    aliases: ["tree", "green vegetation"]
+    seen: true
+  - name: trunk
+    train_id: 71
+    aliases: ["tree trunk"]
+    seen: false
+  - name: terrain
+    train_id: 72
+    aliases: ["natural terrain", "ground terrain"]
+    seen: true
+  - name: pole
+    train_id: 80
+    aliases: ["traffic pole", "street pole"]
+    seen: false
+  - name: traffic sign
+    train_id: 81
+    aliases: ["road sign", "street sign"]
+    seen: false

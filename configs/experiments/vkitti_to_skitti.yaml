@@ -1,0 +1,182 @@
+_base_: ../default.yaml
+experiment_name: vkitti_to_skitti_ov_dg
+
+output:
+  run_root: runs
+  timestamp_subdir: true
+
+vocab:
+  train: configs/vocab/vkitti_skitti/vkitti_raw_train.yaml
+  eval: configs/vocab/vkitti_skitti/semantic_kitti_gt_aligned_19.yaml
+
+vocabulary:
+  train_vocab_path: configs/vocab/vkitti_skitti/vkitti_raw_train.yaml
+  eval_vocab_path: configs/vocab/vkitti_skitti/semantic_kitti_gt_aligned_19.yaml
+  semantic_probe_vocab_path: configs/vocab/vkitti_skitti/semantic_probe_extended.yaml
+  prompt_templates:
+    - "a photo of a {}."
+    - "a point cloud of a {}."
+    - "a driving scene with {}."
+  use_aliases: true
+
+data:
+  use_legacy_unidseg_6class_mapping: false
+  ignore_index: -100
+  source:
+    type: VirtualKITTIRawSCN
+    train: [train]
+    kwargs:
+      preprocess_dir: /home/zhangshuai/Sysu_4T/houych/VirtualKITTI/preprocess
+      virtual_kitti_dir: /home/zhangshuai/Sysu_4T/houych/VirtualKITTI
+      length:
+      num_points: 10000
+      scale: 20
+      full_scale: 4096
+      crop_size: [480, 302]
+      bottom_crop: true
+      fliplr: 0.0
+      color_jitter:
+      noisy_rot: 0.0
+      flip_y: 0.0
+      rot_z: 0.0
+      transl: false
+      downsample: [10000]
+      use_color: false
+  target:
+    type: SemanticKITTIRawSCN
+    val: [val]
+    test: [test]
+    kwargs:
+      preprocess_dir: /home/zhangshuai/Sysu_4T/houych/SemanticKITTI/preprocess
+      semantic_kitti_dir: /home/zhangshuai/Sysu_4T/houych/SemanticKITTI
+      length:
+      num_points: 10000
+      scale: 20
+      full_scale: 4096
+      crop_size: [480, 302]
+      bottom_crop: true
+      fliplr: 0.0
+      color_jitter:
+      use_color: false
+
+train:
+  epochs: 200
+  max_iters: 0
+  batch_size: 2
+  log_period: 50
+  progress_bar: true
+  curve_period: 500
+  checkpoint_period: 3000
+
+eval:
+  allow_eval_vocab_different_from_train: true
+  compute_seen_unseen_miou: true
+  compute_present_miou: true
+  report_2d_projected: true
+  report_3d: true
+  report_ensemble: true
+  split: val
+  batch_size: 1
+  period: 3000
+  save_predictions: false
+
+model:
+  use_fixed_classifier: false
+  embedding_dim: 768
+  text_encoder:
+    backend: clip
+    model_name: ViT-L/14
+    pretrained: openai
+    download_root: weights/clip
+    embed_dim: 768
+    freeze: true
+    cache: true
+  branch2d:
+    backend: vireo_style
+    type: Vireo2DOVBranch
+    image_encoder: dinov2_vitl14
+    pretrained: true
+    dino_repo_path: /home/zhangshuai/Sysu_4T/houych/PointCLIP-DAG/third_party/Depth-Anything-V2
+    image_encoder_weight_path: weights/dinov2/dinov2_vitl14_pretrain_torch19.pth
+    dino_weight_path: weights/dinov2/dinov2_vitl14_pretrain_torch19.pth
+    freeze_image_encoder: true
+    image_encoder_input_size: 518
+    width: 96
+    num_geotext_tokens: 64
+    embed_dim: text
+    enable_depth: true
+    depth_mode: depth_anything_v2
+    depth_weight_path: /home/zhangshuai/Sysu_4T/houych/PointCLIP-DAG/weights/depth_anything_v2/depth_anything_v2_vits.pth
+    allow_depth_fallback: false
+    enable_depth_awareness: true
+    enable_attention_optimization: true
+    enable_geotext_query: true
+    enable_cmpe: true
+    enable_dov_head: true
+    enable_text_feature_refinement: true
+    output_stride: 4
+    enable_depth_vfm: true
+    depth_vfm:
+      backend: depth_anything_v2
+      encoder: vits
+      repo_path: /home/zhangshuai/Sysu_4T/houych/PointCLIP-DAG/third_party/Depth-Anything-V2
+      depth_weight_path: /home/zhangshuai/Sysu_4T/houych/PointCLIP-DAG/weights/depth_anything_v2/depth_anything_v2_vits.pth
+      input_size: 518
+      freeze: true
+      blend_sparse_depth: true
+  branch3d:
+    backend: unidseg_spconv
+    allow_mlp_fallback: false
+    in_channels: 1
+    base_channels: 32
+    channels: [32, 64, 128, 256, 256, 128, 96, 64]
+    layers: [2, 3, 4, 6, 2, 2, 2, 2]
+    out_dim: 64
+    mlp_hidden: 128
+  projection_head:
+    hidden_dim: 256
+    dropout: 0.0
+  freeze:
+    text_encoder: true
+    branch2d: false
+    branch3d: false
+
+loss:
+  w_3d_ce: 1.0
+  w_2d_ce: 1.0
+  w_feat: 0.05
+  w_kl: 0.05
+  temperature: 2.0
+  logit_scale: 20.0
+  conf_thresh: 0.5
+  ignore_index: -100
+
+semantic_metrics:
+  enabled: true
+  semantic_threshold: 0.85
+  compute_semantic_similarity: true
+  compute_near_miss_accuracy: true
+  compute_2d3d_agreement: true
+  compute_prompt_consistency: true
+  prompt_consistency_num_batches: 10
+  compute_text_alignment_margin: true
+  compute_semantic_confusions: true
+  topk_confusions: 5
+
+ensemble:
+  enabled: true
+  weights: [0.0, 0.25, 0.5, 0.75, 1.0]
+
+debug:
+  enabled: false
+  log_first_n_steps: 5
+  log_interval: 500
+  check_label_mapping: true
+  check_grad_norm: true
+  check_prediction_hist: true
+
+scheduler:
+  type: MultiStepLR
+  step_unit: epoch
+  milestones: [120, 170]
+  gamma: 0.1

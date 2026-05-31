@@ -1,0 +1,128 @@
+experiment_name: smoke_default
+seed: 42
+deterministic: false
+device: cuda
+
+external:
+  python_paths:
+    - /home/zhangshuai/Sysu_4T/houych/UniDSeg
+    - /home/zhangshuai/Sysu_4T/houych/Vireo
+
+output:
+  run_root: runs
+  timestamp_subdir: true
+
+vocabulary:
+  train_vocab_path: configs/vocab/vkitti_skitti/vkitti_raw_train.yaml
+  eval_vocab_path: configs/vocab/vkitti_skitti/semantic_kitti_gt_aligned_19.yaml
+  semantic_probe_vocab_path: configs/vocab/vkitti_skitti/semantic_probe_extended.yaml
+  prompt_templates:
+    - "a photo of a {}."
+    - "a point cloud of a {}."
+    - "a driving scene with {}."
+
+vocab:
+  train: configs/vocab/vkitti_skitti/vkitti_raw_train.yaml
+  eval: configs/vocab/vkitti_skitti/semantic_kitti_gt_aligned_19.yaml
+
+data:
+  use_legacy_unidseg_6class_mapping: false
+  ignore_index: -100
+  source:
+    type: SyntheticDataset
+    train: [train]
+    kwargs:
+      length: 4
+      num_points: 512
+      image_size: [96, 160]
+      in_channels: 1
+  target:
+    type: SyntheticDataset
+    val: [val]
+    test: [test]
+    kwargs:
+      length: 2
+      num_points: 512
+      image_size: [96, 160]
+      in_channels: 1
+
+dataloader:
+  num_workers: 0
+  pin_memory: true
+  drop_last: true
+
+model:
+  use_fixed_classifier: false
+  embedding_dim: 768
+  text_encoder:
+    backend: clip
+    model_name: ViT-L/14
+    pretrained: openai
+    download_root: /home/zhangshuai/.cache/clip
+    embed_dim: 768
+    freeze: true
+    cache: true
+  branch2d:
+    width: 96
+    embed_dim: text
+    enable_depth_vfm: true
+  branch3d:
+    backend: unidseg_spconv
+    allow_mlp_fallback: false
+    in_channels: 1
+    base_channels: 32
+    channels: [32, 64, 128, 256, 256, 128, 96, 64]
+    layers: [2, 3, 4, 6, 2, 2, 2, 2]
+    out_dim: 64
+    mlp_hidden: 128
+  projection_head:
+    hidden_dim: 256
+    dropout: 0.0
+  freeze:
+    text_encoder: true
+    branch2d: false
+    branch3d: false
+
+loss:
+  w_3d_ce: 1.0
+  w_2d_ce: 0.5
+  w_feat: 0.1
+  w_kl: 0.1
+  temperature: 2.0
+  logit_scale: 20.0
+  conf_thresh:
+  ignore_index: -100
+
+optimizer:
+  type: AdamW
+  lr: 0.0001
+  weight_decay: 0.01
+
+scheduler:
+  type: none
+
+train:
+  epochs: 1
+  max_iters: 10
+  batch_size: 2
+  log_period: 1
+  checkpoint_period: 100
+  grad_clip_norm: 1.0
+
+eval:
+  allow_eval_vocab_different_from_train: true
+  compute_seen_unseen_miou: true
+  enabled: true
+  split: test
+  test_split: test
+  batch_size: 1
+  period: 100
+  save_predictions: false
+
+debug:
+  enabled: false
+  log_first_n_steps: 5
+  log_interval: 500
+  check_label_mapping: true
+  check_grad_norm: true
+  check_prediction_hist: true
