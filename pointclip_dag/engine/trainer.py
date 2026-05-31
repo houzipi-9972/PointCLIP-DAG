@@ -139,12 +139,15 @@ class Trainer:
                     "loss",
                     "loss_3d_ce",
                     "loss_2d_ce",
+                    "loss_2d_coarse_ce",
                     "loss_feat",
                     "loss_kl",
                     "metric_2d_projected_acc",
                     "metric_2d_projected_miou",
                     "metric_valid_projected_ratio",
                     "metric_ignored_projected_label_ratio",
+                    "metric_supervised_projected_ratio",
+                    "metric_distill_projected_ratio",
                 ]
             )
 
@@ -165,12 +168,15 @@ class Trainer:
                     values.get("loss", np.nan),
                     values.get("loss_3d_ce", np.nan),
                     values.get("loss_2d_ce", np.nan),
+                    values.get("loss_2d_coarse_ce", np.nan),
                     values.get("loss_feat", np.nan),
                     values.get("loss_kl", np.nan),
                     values.get("metric_2d_projected_acc", np.nan),
                     values.get("metric_2d_projected_miou", np.nan),
                     values.get("metric_valid_projected_ratio", np.nan),
                     values.get("metric_ignored_projected_label_ratio", np.nan),
+                    values.get("metric_supervised_projected_ratio", np.nan),
+                    values.get("metric_distill_projected_ratio", np.nan),
                 ]
             )
 
@@ -194,7 +200,7 @@ class Trainer:
             return
         data = np.atleast_1d(data)
         steps = data["step"]
-        loss_names = ["loss", "loss_3d_ce", "loss_2d_ce", "loss_feat", "loss_kl"]
+        loss_names = ["loss", "loss_3d_ce", "loss_2d_ce", "loss_2d_coarse_ce", "loss_feat", "loss_kl"]
         self.curve_dir.mkdir(parents=True, exist_ok=True)
         plt.figure(figsize=(10, 6))
         for name in loss_names:
@@ -229,6 +235,7 @@ class Trainer:
             "loss": f"{values.get('loss', 0.0):.3f}",
             "3d": f"{values.get('loss_3d_ce', 0.0):.3f}",
             "2d": f"{values.get('loss_2d_ce', 0.0):.3f}",
+            "2d_coarse": f"{values.get('loss_2d_coarse_ce', 0.0):.3f}",
             "2d_acc": f"{values.get('metric_2d_projected_acc', 0.0):.3f}",
             "feat": f"{values.get('loss_feat', 0.0):.3f}",
             "kl": f"{values.get('loss_kl', 0.0):.3f}",

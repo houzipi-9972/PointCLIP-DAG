@@ -144,11 +144,13 @@ model:
 loss:
   w_3d_ce: 1.0
   w_2d_ce: 1.0
+  w_2d_coarse_ce: 0.2
   w_feat: 0.05
   w_kl: 0.05
   temperature: 2.0
   logit_scale: 20.0
   conf_thresh: 0.5
+  balance_2d_ce: true
   ignore_index: -100
 
 semantic_metrics:

@@ -49,6 +49,15 @@ class PointCLIPDAG(nn.Module):
         valid_point_mask = torch.cat(masks, dim=0) if masks else torch.zeros(0, dtype=torch.bool, device=device)
         logits2d_points = self.logit_scale * z2d_points @ text_embeddings.t()
         logits2d_map = self.logit_scale * torch.einsum("bdhw,kd->bkhw", z2d_map, text_embeddings)
+        coarse_logits2d_map = branch2d_outputs.get("coarse_logits2d_map", None)
+        if coarse_logits2d_map is not None:
+            coarse_logits2d_points, _, _ = sample_image_features(
+                coarse_logits2d_map,
+                batch["point2img"],
+                batch.get("valid_mask"),
+            )
+        else:
+            coarse_logits2d_points = logits2d_points.new_zeros((0, logits2d_points.shape[1]))
 
         dataset_name = _get_dataset_name(batch)
         point_labels = map_labels_to_vocab(
@@ -71,7 +80,8 @@ class PointCLIPDAG(nn.Module):
             "point_to_image_xy": point_xy,
             "z2d_map": z2d_map,
             "logits2d_map": logits2d_map,
-            "coarse_logits2d_map": branch2d_outputs.get("coarse_logits2d_map", None),
+            "coarse_logits2d_map": coarse_logits2d_map,
+            "coarse_logits2d_points": coarse_logits2d_points,
             "dov_attention_maps": branch2d_outputs.get("dov_attention_maps", None),
             "branch2d_depth_mode": branch2d_outputs.get("depth_mode", ""),
         }
