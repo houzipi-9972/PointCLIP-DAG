@@ -311,7 +311,7 @@ want a separate evaluation directory.
 
 Evaluation rebuilds text embeddings from `vocabulary.eval_vocab_path`, so the
 evaluation vocabulary can differ from the training vocabulary as long as the
-task label mapping can translate target raw labels into that eval vocabulary. A third
+eval vocab yaml lists the target raw labels it should score. A third
 `semantic_probe_vocab_path` can hold richer text probes; it is not used for
 standard GT mIoU.
 
@@ -356,8 +356,8 @@ vocabulary:
   semantic_probe_vocab_path: configs/vocab/vkitti_skitti/semantic_probe_extended.yaml
 ```
 
-Each vocabulary yaml defines class text, aliases, optional dataset label IDs,
-and seen/unseen membership:
+Each vocabulary yaml defines class text, aliases, raw dataset labels, the
+mapped output label name, and seen/unseen membership:
 
 ```yaml
 prompt_templates:
@@ -365,11 +365,13 @@ prompt_templates:
   - "a point cloud of a {}."
 classes:
   - name: car
-    train_id: 11
+    raw_label: [10, 252]
+    mapping_label: car
     aliases: ["vehicle car", "automobile"]
     seen: true
   - name: traffic light
-    train_id: null
+    raw_label: 7
+    mapping_label: traffic light
     aliases: ["signal light"]
     seen: false
 ```
@@ -377,16 +379,16 @@ classes:
 Multiple aliases and prompt templates are encoded and averaged into one
 normalized class text embedding.
 
-`train_id` is kept only as human-readable metadata for older configs. It is not
-the logits column index, and it is not the authoritative raw-label mapping.
-PointCLIP-DAG maps raw dataset labels to active vocabulary columns through the
-task mapping files under `configs/mappings/`.
+`raw_label` is the authoritative dataset raw label id, or a list of raw ids.
+`mapping_label` is the label name after mapping into the current vocabulary
+space. The logits column index is still determined only by the class order in
+the active vocab yaml.
 
-- In a training vocab, classes covered by the task mapping are supervised by CE.
+- In a training vocab, classes with `raw_label` are supervised by CE.
 - Labels not present in the active training vocab are ignored for CE.
-- In an eval vocab, classes covered by the target dataset mapping can contribute to mIoU.
-- Classes with `train_id: null` are valid open-vocabulary text queries, but do
-  not contribute to mIoU unless the task mapping maps a raw GT label to them.
+- In an eval vocab, classes with `raw_label` contribute to mIoU.
+- Classes without `raw_label` are valid open-vocabulary text queries, but do
+  not contribute to mIoU unless `raw_label` is set.
 
 Validate a custom yaml before running:
 
@@ -394,28 +396,11 @@ Validate a custom yaml before running:
 python pointclip_dag/scripts/check_vocab.py configs/vocab/vkitti_skitti/semantic_kitti_gt_aligned_19.yaml
 ```
 
-Validate the raw-label mapping before training:
+Inspect local raw labels when building a new vocab:
 
 ```bash
 python tools/inspect_raw_labels.py --dataset semantic_kitti --root /home/zhangshuai/Sysu_4T/houych/SemanticKITTI --limit 200
-python tools/check_mapping.py --config configs/experiments/vkitti_to_skitti.yaml --strict
-python tools/print_mapping_summary.py --config configs/experiments/vkitti_to_skitti.yaml
 ```
-
-The mapping chain is explicit:
-
-```text
-dataset raw label id -> canonical class name -> active vocab class name -> dynamic vocab column id
-```
-
-This prevents UniDSeg's legacy six shared classes or any dataset-specific raw
-IDs from silently becoming the PointCLIP-DAG output space. `semantic_probe_vocab`
-is intentionally diagnostic only; it is not forced into standard mIoU.
-
-The mapping layout is deliberately flat: each task has one yaml file, for
-example `configs/mappings/vkitti_to_skitti.yaml`. It contains the source raw
-labels, target raw labels, observed counts when available, and the map into each
-vocab role. There are no separate dataset/vocab-map subdirectories.
 
 List all available vocab banks:
 
@@ -457,7 +442,7 @@ python tools/eval.py \
 
 Classes passed through `--classes` are pure text queries. They do not need to be
 known during training and do not need a fixed classifier head. Because they have
-no dataset `train_id`, this mode is prediction-oriented; mIoU is meaningful only
+no dataset `raw_label`, this mode is prediction-oriented; mIoU is meaningful only
 for classes that have a label id in a yaml vocabulary.
 
 For SemanticKITTI raw-class evaluation, use the same experiment config and

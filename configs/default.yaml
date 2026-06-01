@@ -25,11 +25,7 @@ vocab:
   train: configs/vocab/vkitti_skitti/vkitti_raw_train.yaml
   eval: configs/vocab/vkitti_skitti/semantic_kitti_gt_aligned_19.yaml
 
-mapping:
-  task_mapping_path: configs/mappings/vkitti_to_skitti.yaml
-
 data:
-  use_legacy_unidseg_6class_mapping: false
   ignore_index: -100
   source:
     type: SyntheticDataset

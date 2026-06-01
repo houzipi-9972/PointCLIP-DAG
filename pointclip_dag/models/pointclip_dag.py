@@ -16,7 +16,6 @@ class PointCLIPDAG(nn.Module):
         super().__init__()
         self.cfg = cfg
         self.vocabulary = vocabulary
-        self.label_mapper = None
         self.text_encoder = TextEncoder(cfg.model.text_encoder)
         text_dim = self.text_encoder.embed_dim
         self.branch2d = Vireo2DOVBranch(cfg.model.branch2d, text_dim=text_dim)
@@ -31,9 +30,6 @@ class PointCLIPDAG(nn.Module):
 
     def set_vocabulary(self, vocabulary) -> None:
         self.vocabulary = vocabulary
-
-    def set_label_mapper(self, label_mapper) -> None:
-        self.label_mapper = label_mapper
 
     def encode_text(self, device):
         if self.vocabulary is None:
@@ -64,20 +60,12 @@ class PointCLIPDAG(nn.Module):
             coarse_logits2d_points = logits2d_points.new_zeros((0, logits2d_points.shape[1]))
 
         dataset_name = _get_dataset_name(batch)
-        if self.label_mapper is not None:
-            point_labels = self.label_mapper.map_raw_to_vocab(
-                batch["labels_3d"],
-                dataset_name,
-                self.vocabulary,
-                ignore_index=int(self.cfg.loss.ignore_index),
-            )
-        else:
-            point_labels = map_labels_to_vocab(
-                batch["labels_3d"],
-                dataset_name,
-                self.vocabulary,
-                ignore_index=int(self.cfg.loss.ignore_index),
-            )
+        point_labels = map_labels_to_vocab(
+            batch["labels_3d"],
+            dataset_name,
+            self.vocabulary,
+            ignore_index=int(self.cfg.loss.ignore_index),
+        )
 
         outputs = {
             "text_embeddings": text_embeddings,

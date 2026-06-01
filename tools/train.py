@@ -14,7 +14,7 @@ if str(PROJECT_ROOT) not in sys.path:
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
 
 from pointclip_dag.config import load_config, save_config
-from pointclip_dag.data import build_dataloader, build_label_mapper, build_vocabulary
+from pointclip_dag.data import build_dataloader, build_vocabulary
 from pointclip_dag.engine import Trainer
 from pointclip_dag.losses import build_loss
 from pointclip_dag.models import build_model
@@ -40,20 +40,17 @@ def run():
 
     train_vocab = build_vocabulary(_resolve(PROJECT_ROOT, _vocab_path(cfg, "train")))
     eval_vocab = build_vocabulary(_resolve(PROJECT_ROOT, _vocab_path(cfg, "eval")))
-    label_mapper = build_label_mapper(cfg, PROJECT_ROOT)
     logger.info("train_vocab=%s classes=%d names=%s", _vocab_path(cfg, "train"), train_vocab.num_classes, train_vocab.names)
     logger.info("eval_vocab=%s classes=%d names=%s", _vocab_path(cfg, "eval"), eval_vocab.num_classes, eval_vocab.names)
-    if label_mapper is not None:
-        logger.info("task_mapping=%s task=%s", label_mapper.task_mapping_path, label_mapper.task_name)
-        _log_mapping_coverage(logger, cfg.data.source.type, train_vocab, label_mapper, "train")
-        _log_mapping_coverage(logger, cfg.data.target.type, eval_vocab, label_mapper, "eval")
+    logger.info("train_raw_label_mapping=%s", train_vocab.to_label_mapping())
+    logger.info("eval_raw_label_mapping=%s", eval_vocab.to_label_mapping())
     probe_path = cfg.get("vocabulary", {}).get("semantic_probe_vocab_path", "")
     if probe_path:
         probe_vocab = build_vocabulary(_resolve(PROJECT_ROOT, probe_path))
         logger.info("semantic_probe_vocab=%s classes=%d names=%s", probe_path, probe_vocab.num_classes, probe_vocab.names)
 
     device = torch.device(cfg.device if torch.cuda.is_available() or cfg.device == "cpu" else "cpu")
-    model = build_model(cfg, vocabulary=train_vocab, label_mapper=label_mapper).to(device)
+    model = build_model(cfg, vocabulary=train_vocab).to(device)
     _log_model_sanity(logger, model)
     loss_fn = build_loss(cfg)
     optimizer = _build_optimizer(cfg, model)
@@ -147,20 +144,6 @@ def _log_model_sanity(logger, model):
         raise RuntimeError("Formal training aborted because branch3d used MLP fallback.")
     if _count_trainable(model.text_encoder) != 0:
         raise RuntimeError("Formal training aborted because text_encoder has trainable parameters.")
-
-
-def _log_mapping_coverage(logger, dataset_name, vocabulary, label_mapper, role):
-    rows = label_mapper.coverage_rows(dataset_name, vocabulary, vocab_role=role)
-    mapped = [row for row in rows if not row["ignored"]]
-    unmapped_vocab = label_mapper.unmapped_vocab_names(dataset_name, vocabulary, vocab_role=role)
-    logger.info(
-        "mapping coverage role=%s dataset=%s mapped_raw_labels=%d/%d unmapped_vocab=%s",
-        role,
-        dataset_name,
-        len(mapped),
-        len(rows),
-        unmapped_vocab,
-    )
 
 
 def _count_trainable(module):

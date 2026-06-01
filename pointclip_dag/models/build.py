@@ -5,11 +5,9 @@ from pointclip_dag.models.pointclip_dag import PointCLIPDAG
 from pointclip_dag.utils.misc import freeze_module
 
 
-def build_model(cfg, vocabulary=None, label_mapper=None):
+def build_model(cfg, vocabulary=None):
     setup_external_paths(cfg)
     model = PointCLIPDAG(cfg, vocabulary=vocabulary)
-    if label_mapper is not None:
-        model.set_label_mapper(label_mapper)
     freeze = cfg.model.get("freeze", {})
     if freeze.get("text_encoder", True):
         freeze_module(model.text_encoder)

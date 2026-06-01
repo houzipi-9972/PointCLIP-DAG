@@ -4,42 +4,32 @@ prompt_templates:
   - "a driving scene with {}."
 classes:
   - name: car
-    train_id:
     aliases: ["vehicle car", "automobile"]
     seen: false
   - name: truck
-    train_id:
     aliases: ["large vehicle", "lorry"]
     seen: false
   - name: road
-    train_id:
     aliases: ["drivable road", "road surface"]
     seen: false
   - name: sidewalk
-    train_id:
     aliases: ["walkway", "pedestrian sidewalk"]
     seen: false
   - name: building
-    train_id:
     aliases: ["building facade", "manmade building"]
     seen: false
   - name: vegetation
-    train_id:
     aliases: ["tree", "green vegetation"]
     seen: false
   - name: pole
-    train_id:
     aliases: ["traffic pole", "street pole"]
     seen: false
   - name: traffic light
-    train_id:
     aliases: ["signal light", "street light signal"]
     seen: false
   - name: traffic sign
-    train_id:
     aliases: ["road sign", "street sign"]
     seen: false
   - name: person
-    train_id:
     aliases: ["pedestrian"]
     seen: false

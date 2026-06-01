@@ -4,114 +4,86 @@ prompt_templates:
   - "a street scene containing {}."
 classes:
   - name: car
-    train_id:
     aliases: ["automobile", "sedan", "vehicle car"]
     seen: true
   - name: van
-    train_id:
     aliases: ["delivery van", "minivan"]
     seen: true
   - name: truck
-    train_id:
     aliases: ["lorry", "heavy truck"]
     seen: true
   - name: bus
-    train_id:
     aliases: ["city bus", "coach bus"]
     seen: false
   - name: motorcycle
-    train_id:
     aliases: ["motorbike"]
     seen: false
   - name: bicycle
-    train_id:
     aliases: ["bike"]
     seen: false
   - name: pedestrian
-    train_id:
     aliases: ["person", "walking person"]
     seen: false
   - name: bicyclist
-    train_id:
     aliases: ["person riding bicycle"]
     seen: false
   - name: road
-    train_id:
     aliases: ["road surface", "drivable road"]
     seen: true
   - name: lane marking
-    train_id:
     aliases: ["painted lane marking", "road marking"]
     seen: false
   - name: parking area
-    train_id:
     aliases: ["parking", "parking lot"]
     seen: false
   - name: sidewalk
-    train_id:
     aliases: ["walkway", "pavement"]
     seen: false
   - name: curb
-    train_id:
     aliases: ["road curb"]
     seen: false
   - name: building
-    train_id:
     aliases: ["building facade", "house"]
     seen: true
   - name: wall
-    train_id:
     aliases: ["concrete wall"]
     seen: false
   - name: fence
-    train_id:
     aliases: ["roadside fence"]
     seen: false
   - name: guardrail
-    train_id:
     aliases: ["safety barrier", "metal guardrail"]
     seen: true
   - name: vegetation
-    train_id:
     aliases: ["plants", "bushes", "trees"]
     seen: true
   - name: tree
-    train_id:
     aliases: ["roadside tree"]
     seen: true
   - name: tree trunk
-    train_id:
     aliases: ["trunk"]
     seen: false
   - name: grass
-    train_id:
     aliases: ["grass terrain"]
     seen: false
   - name: terrain
-    train_id:
     aliases: ["natural terrain", "ground"]
     seen: true
   - name: pole
-    train_id:
     aliases: ["street pole", "traffic pole"]
     seen: true
   - name: traffic sign
-    train_id:
     aliases: ["road sign", "street sign"]
     seen: true
   - name: traffic light
-    train_id:
     aliases: ["traffic signal"]
     seen: true
   - name: sky
-    train_id:
     aliases: ["open sky"]
     seen: false
   - name: bridge
-    train_id:
     aliases: ["overpass"]
     seen: false
   - name: tunnel
-    train_id:
     aliases: ["road tunnel"]
     seen: false

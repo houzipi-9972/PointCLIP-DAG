@@ -46,7 +46,13 @@ def run():
 
 def _synthetic_vocab(num_classes: int) -> Vocabulary:
     classes = [
-        VocabClass(name=f"synthetic class {idx}", train_id=idx, aliases=tuple(), seen=idx % 2 == 0)
+        VocabClass(
+            name=f"synthetic class {idx}",
+            raw_labels=(idx,),
+            mapping_label=f"synthetic class {idx}",
+            aliases=tuple(),
+            seen=idx % 2 == 0,
+        )
         for idx in range(num_classes)
     ]
     return Vocabulary(classes, prompt_templates=["a point cloud of a {}."])

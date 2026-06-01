@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
-import torch
 import yaml
 
-from pointclip_dag.data.raw_label_spaces import build_raw_to_name
+try:
+    import torch
+except ModuleNotFoundError:  # Keep vocab inspection tools usable without the training stack.
+    torch = None
 
 @dataclass(frozen=True)
 class VocabClass:
     name: str
-    train_id: Optional[int]
+    raw_labels: tuple[int, ...]
+    mapping_label: str
     aliases: tuple[str, ...]
     seen: bool
 
@@ -22,14 +24,20 @@ class Vocabulary:
         self.classes = list(classes)
         self.prompt_templates = prompt_templates or ["a photo of a {}."]
         self.names = [item.name for item in self.classes]
-        self.train_ids = [item.train_id for item in self.classes]
-        self.seen_mask = torch.tensor([item.seen for item in self.classes], dtype=torch.bool)
-        train_ids_with_labels = [train_id for train_id in self.train_ids if train_id is not None]
-        if len(set(train_ids_with_labels)) != len(train_ids_with_labels):
-            raise ValueError("Vocabulary train_id values must be unique.")
-        self.label_to_index = {
-            int(train_id): idx for idx, train_id in enumerate(self.train_ids) if train_id is not None
-        }
+        self.seen_mask = (
+            torch.tensor([item.seen for item in self.classes], dtype=torch.bool)
+            if torch is not None
+            else [item.seen for item in self.classes]
+        )
+        self.raw_label_to_index = {}
+        for idx, item in enumerate(self.classes):
+            for raw_label in item.raw_labels:
+                raw_label = int(raw_label)
+                if raw_label in self.raw_label_to_index:
+                    other = self.classes[self.raw_label_to_index[raw_label]].name
+                    raise ValueError(f"raw_label {raw_label} is mapped to both {other} and {item.name}.")
+                self.raw_label_to_index[raw_label] = idx
+        self.label_to_index = dict(self.raw_label_to_index)
 
     @property
     def num_classes(self) -> int:
@@ -43,12 +51,13 @@ class Vocabulary:
         return groups
 
     def to_label_mapping(self) -> dict[int, int]:
-        return dict(self.label_to_index)
+        return dict(self.raw_label_to_index)
 
     def map_labels(self, labels: torch.Tensor, ignore_index: int = -100) -> torch.Tensor:
-        """Legacy direct train_id mapping. Prefer map_labels_to_vocab with dataset_name."""
+        if torch is None:
+            raise ImportError("torch is required to map tensor labels with Vocabulary.map_labels().")
         mapped = torch.full_like(labels, fill_value=ignore_index)
-        for raw_id, vocab_idx in self.label_to_index.items():
+        for raw_id, vocab_idx in self.raw_label_to_index.items():
             mapped[labels == raw_id] = vocab_idx
         return mapped
 
@@ -59,7 +68,8 @@ def build_vocabulary(path: str | Path) -> Vocabulary:
     classes = [
         VocabClass(
             name=item["name"],
-            train_id=None if item.get("train_id", None) is None else int(item["train_id"]),
+            raw_labels=_parse_raw_labels(item),
+            mapping_label=str(item.get("mapping_label", item["name"])),
             aliases=tuple(item.get("aliases", [])),
             seen=bool(item.get("seen", True)),
         )
@@ -69,7 +79,17 @@ def build_vocabulary(path: str | Path) -> Vocabulary:
 
 
 def build_vocabulary_from_names(names: list[str], prompt_templates: list[str] | None = None) -> Vocabulary:
-    classes = [VocabClass(name=name.strip(), train_id=None, aliases=tuple(), seen=False) for name in names if name.strip()]
+    classes = [
+        VocabClass(
+            name=name.strip(),
+            raw_labels=tuple(),
+            mapping_label=name.strip(),
+            aliases=tuple(),
+            seen=False,
+        )
+        for name in names
+        if name.strip()
+    ]
     return Vocabulary(classes, prompt_templates=prompt_templates)
 
 
@@ -88,41 +108,24 @@ def build_text_prompts(vocab: Vocabulary, templates: list[str] | None = None) ->
 
 
 def build_raw_to_vocab_mapping(dataset_name: str, vocab: Vocabulary, ignore_index: int = -100) -> dict[int, int]:
-    """Map raw dataset label IDs to current vocabulary column IDs.
-
-    Matching uses explicit `train_id` first, then normalized class names and aliases.
-    This keeps dataset label space separate from open vocabulary column space.
-    """
-    raw_to_name = build_raw_to_name(dataset_name)
-    text_to_vocab = {}
-    for vocab_idx, item in enumerate(vocab.classes):
-        for text in [item.name, *item.aliases]:
-            text_to_vocab[_norm(text)] = vocab_idx
-
-    mapping = {}
-    for raw_id, raw_name in raw_to_name.items():
-        raw_key = _norm(raw_name)
-        mapping[raw_id] = text_to_vocab.get(raw_key, ignore_index)
-
-    for vocab_idx, item in enumerate(vocab.classes):
-        if item.train_id is not None:
-            mapping[int(item.train_id)] = vocab_idx
-    return mapping
+    return vocab.to_label_mapping()
 
 
 def map_labels_to_vocab(raw_labels: torch.Tensor, dataset_name: str, vocab: Vocabulary, ignore_index: int = -100) -> torch.Tensor:
-    mapping = build_raw_to_vocab_mapping(dataset_name, vocab, ignore_index=ignore_index)
-    mapped = torch.full_like(raw_labels, fill_value=ignore_index)
-    for raw_id, vocab_idx in mapping.items():
-        if vocab_idx != ignore_index:
-            mapped[raw_labels == int(raw_id)] = int(vocab_idx)
-    return mapped
+    return vocab.map_labels(raw_labels, ignore_index=ignore_index)
 
 
 def get_seen_unseen_masks(vocab: Vocabulary) -> tuple[torch.Tensor, torch.Tensor]:
+    if torch is None:
+        raise ImportError("torch is required to build seen/unseen tensor masks.")
     seen = vocab.seen_mask.clone()
     return seen, ~seen
 
 
-def _norm(text: str) -> str:
-    return text.lower().replace("_", " ").replace("-", " ").strip()
+def _parse_raw_labels(item: dict) -> tuple[int, ...]:
+    raw = item.get("raw_labels", item.get("raw_label", None))
+    if raw is None:
+        return tuple()
+    if isinstance(raw, (list, tuple)):
+        return tuple(int(value) for value in raw if value is not None)
+    return (int(raw),)

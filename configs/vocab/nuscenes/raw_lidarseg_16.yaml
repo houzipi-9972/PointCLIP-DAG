@@ -4,66 +4,82 @@ prompt_templates:
   - "a driving scene with {}."
 classes:
   - name: barrier
-    train_id: 1
+    raw_label: 9
+    mapping_label: barrier
     aliases: ["road barrier"]
     seen: false
   - name: bicycle
-    train_id: 2
+    raw_label: 14
+    mapping_label: bicycle
     aliases: ["bike"]
     seen: false
   - name: bus
-    train_id: 3
+    raw_label: [15, 16]
+    mapping_label: bus
     aliases: ["city bus"]
     seen: false
   - name: car
-    train_id: 4
+    raw_label: 17
+    mapping_label: car
     aliases: ["vehicle car", "automobile"]
     seen: true
   - name: construction vehicle
-    train_id: 5
+    raw_label: 18
+    mapping_label: construction vehicle
     aliases: ["construction truck"]
     seen: false
   - name: motorcycle
-    train_id: 6
+    raw_label: 21
+    mapping_label: motorcycle
     aliases: ["motorbike"]
     seen: false
   - name: pedestrian
-    train_id: 7
+    raw_label: [2, 3, 4, 5, 6, 7, 8]
+    mapping_label: pedestrian
     aliases: ["person walking"]
     seen: false
   - name: traffic cone
-    train_id: 8
+    raw_label: 12
+    mapping_label: traffic cone
     aliases: ["road cone"]
     seen: false
   - name: trailer
-    train_id: 9
+    raw_label: 22
+    mapping_label: trailer
     aliases: ["vehicle trailer"]
     seen: false
   - name: truck
-    train_id: 10
+    raw_label: 23
+    mapping_label: truck
     aliases: ["large vehicle", "lorry"]
     seen: true
   - name: driveable surface
-    train_id: 11
+    raw_label: 24
+    mapping_label: driveable surface
     aliases: ["drivable road", "road surface"]
     seen: true
   - name: other flat
-    train_id: 12
+    raw_label: 25
+    mapping_label: other flat
     aliases: ["flat ground surface"]
     seen: false
   - name: sidewalk
-    train_id: 13
+    raw_label: 26
+    mapping_label: sidewalk
     aliases: ["walkway", "pedestrian sidewalk"]
     seen: true
   - name: terrain
-    train_id: 14
+    raw_label: 27
+    mapping_label: terrain
     aliases: ["ground terrain", "natural ground"]
     seen: true
   - name: manmade
-    train_id: 15
+    raw_label: 28
+    mapping_label: manmade
     aliases: ["building", "manmade structure"]
     seen: true
   - name: vegetation
-    train_id: 16
+    raw_label: 30
+    mapping_label: vegetation
     aliases: ["plant", "tree", "green vegetation"]
     seen: false

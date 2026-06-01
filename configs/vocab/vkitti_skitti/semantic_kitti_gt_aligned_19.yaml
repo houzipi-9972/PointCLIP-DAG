@@ -4,78 +4,97 @@ prompt_templates:
   - "a driving scene with {}."
 classes:
   - name: car
-    train_id: 10
+    raw_label: [10, 252]
+    mapping_label: car
     aliases: ["vehicle car", "automobile"]
     seen: true
   - name: bicycle
-    train_id: 11
+    raw_label: 11
+    mapping_label: bicycle
     aliases: ["bike"]
     seen: false
   - name: motorcycle
-    train_id: 15
+    raw_label: 15
+    mapping_label: motorcycle
     aliases: ["motorbike"]
     seen: false
   - name: truck
-    train_id: 18
+    raw_label: [18, 258]
+    mapping_label: truck
     aliases: ["large truck", "lorry"]
     seen: true
   - name: other vehicle
-    train_id: 20
+    raw_label: [13, 20, 257, 259]
+    mapping_label: other vehicle
     aliases: ["other road vehicle", "bus", "van", "trailer", "construction vehicle"]
     seen: false
   - name: person
-    train_id: 30
+    raw_label: [30, 254]
+    mapping_label: person
     aliases: ["pedestrian"]
     seen: false
   - name: bicyclist
-    train_id: 31
+    raw_label: [31, 253]
+    mapping_label: bicyclist
     aliases: ["person riding a bicycle"]
     seen: false
   - name: motorcyclist
-    train_id: 32
+    raw_label: [32, 255]
+    mapping_label: motorcyclist
     aliases: ["person riding a motorcycle"]
     seen: false
   - name: road
-    train_id: 40
+    raw_label: [40, 60]
+    mapping_label: road
     aliases: ["drivable road", "road surface"]
     seen: true
   - name: parking
-    train_id: 44
+    raw_label: 44
+    mapping_label: parking
     aliases: ["parking area"]
     seen: false
   - name: sidewalk
-    train_id: 48
+    raw_label: 48
+    mapping_label: sidewalk
     aliases: ["walkway", "pedestrian sidewalk"]
     seen: false
   - name: other ground
-    train_id: 49
+    raw_label: 49
+    mapping_label: other ground
     aliases: ["ground surface", "other ground"]
     seen: false
   - name: building
-    train_id: 50
+    raw_label: 50
+    mapping_label: building
     aliases: ["building facade", "manmade building"]
     seen: true
   - name: fence
-    train_id: 51
+    raw_label: 51
+    mapping_label: fence
     aliases: ["roadside fence"]
     seen: false
   - name: vegetation
-    train_id: 70
+    raw_label: 70
+    mapping_label: vegetation
     aliases: ["tree", "green vegetation", "plants"]
     seen: true
   - name: trunk
-    train_id: 71
+    raw_label: 71
+    mapping_label: trunk
     aliases: ["tree trunk"]
     seen: false
   - name: terrain
-    train_id: 72
+    raw_label: 72
+    mapping_label: terrain
     aliases: ["natural terrain", "ground terrain"]
     seen: true
   - name: pole
-    train_id: 80
+    raw_label: 80
+    mapping_label: pole
     aliases: ["traffic pole", "street pole"]
     seen: false
   - name: traffic sign
-    train_id: 81
+    raw_label: 81
+    mapping_label: traffic sign
     aliases: ["road sign", "street sign"]
     seen: false

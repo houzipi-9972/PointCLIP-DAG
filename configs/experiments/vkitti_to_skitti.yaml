@@ -19,11 +19,7 @@ vocabulary:
     - "a driving scene with {}."
   use_aliases: true
 
-mapping:
-  task_mapping_path: configs/mappings/vkitti_to_skitti.yaml
-
 data:
-  use_legacy_unidseg_6class_mapping: false
   ignore_index: -100
   source:
     type: VirtualKITTIRawSCN

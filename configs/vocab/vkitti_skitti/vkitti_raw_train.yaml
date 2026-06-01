@@ -4,50 +4,62 @@ prompt_templates:
   - "a driving scene with {}."
 classes:
   - name: terrain
-    train_id: 0
+    raw_label: 0
+    mapping_label: terrain
     aliases: ["ground terrain", "natural terrain"]
     seen: true
   - name: tree
-    train_id: 1
+    raw_label: 1
+    mapping_label: tree
     aliases: ["tree"]
     seen: true
   - name: vegetation
-    train_id: 2
+    raw_label: 2
+    mapping_label: vegetation
     aliases: ["plants", "green vegetation"]
     seen: true
   - name: building
-    train_id: 3
+    raw_label: 3
+    mapping_label: building
     aliases: ["building facade", "manmade building"]
     seen: true
   - name: road
-    train_id: 4
+    raw_label: 4
+    mapping_label: road
     aliases: ["road surface", "drivable road"]
     seen: true
   - name: guardrail
-    train_id: 5
+    raw_label: 5
+    mapping_label: guardrail
     aliases: ["road guard rail", "guard rail"]
     seen: true
   - name: traffic sign
-    train_id: 6
+    raw_label: 6
+    mapping_label: traffic sign
     aliases: ["traffic-sign", "road sign"]
     seen: true
   - name: traffic light
-    train_id: 7
+    raw_label: 7
+    mapping_label: traffic light
     aliases: ["traffic-light", "signal light"]
     seen: true
   - name: pole
-    train_id: 8
+    raw_label: 8
+    mapping_label: pole
     aliases: ["street pole", "traffic pole"]
     seen: true
   - name: truck
-    train_id: 10
+    raw_label: 10
+    mapping_label: truck
     aliases: ["lorry", "large vehicle"]
     seen: true
   - name: car
-    train_id: 11
+    raw_label: 11
+    mapping_label: car
     aliases: ["automobile", "vehicle car"]
     seen: true
   - name: van
-    train_id: 12
+    raw_label: 12
+    mapping_label: van
     aliases: ["vehicle van"]
     seen: true

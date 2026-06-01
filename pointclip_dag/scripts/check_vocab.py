@@ -21,23 +21,26 @@ def run():
         vocab_path = vocab_path if vocab_path.exists() else PROJECT_ROOT / vocab_path
     vocab = build_vocabulary(vocab_path)
 
-    labeled = [item for item in vocab.classes if item.train_id is not None]
-    text_only = [item for item in vocab.classes if item.train_id is None]
+    labeled = [item for item in vocab.classes if item.raw_labels]
+    text_only = [item for item in vocab.classes if not item.raw_labels]
     seen = [item for item in vocab.classes if item.seen]
     unseen = [item for item in vocab.classes if not item.seen]
 
     print(f"vocab: {vocab_path}")
     print(f"classes: {vocab.num_classes}")
-    print(f"with train_id: {len(labeled)}")
+    print(f"with raw_label: {len(labeled)}")
     print(f"text-only queries: {len(text_only)}")
     print(f"seen: {len(seen)}")
     print(f"unseen: {len(unseen)}")
     print()
     for idx, item in enumerate(vocab.classes):
-        train_id = "none" if item.train_id is None else item.train_id
+        raw_label = "none" if not item.raw_labels else list(item.raw_labels)
         split = "seen" if item.seen else "unseen"
         alias_count = len(item.aliases)
-        print(f"{idx:03d} train_id={train_id} {split:6s} aliases={alias_count:02d} name={item.name}")
+        print(
+            f"{idx:03d} raw_label={raw_label} mapping_label={item.mapping_label} "
+            f"{split:6s} aliases={alias_count:02d} name={item.name}"
+        )
 
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ def run():
     for path in sorted(search_root.rglob("*.yaml")):
         vocab = build_vocabulary(path)
         rel = path.relative_to(root)
-        labeled = sum(item.train_id is not None for item in vocab.classes)
+        labeled = sum(bool(item.raw_labels) for item in vocab.classes)
         text_only = vocab.num_classes - labeled
         seen = sum(item.seen for item in vocab.classes)
         unseen = vocab.num_classes - seen

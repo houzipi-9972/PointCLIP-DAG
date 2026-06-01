@@ -506,12 +506,13 @@ def _write_metrics_summary_txt(
                 (
                     idx,
                     item.name,
-                    "" if item.train_id is None else item.train_id,
+                    _raw_label_text(item),
+                    item.mapping_label,
                     bool(item.seen),
                     ", ".join(item.aliases),
                 )
             )
-        lines.extend(_format_table(["id", "label", "raw_id", "seen", "aliases"], train_rows))
+        lines.extend(_format_table(["id", "label", "raw_label", "mapping_label", "seen", "aliases"], train_rows))
     lines.append("")
 
     lines.append("Validation Labels")
@@ -524,7 +525,8 @@ def _write_metrics_summary_txt(
             (
                 idx,
                 item.name,
-                "" if item.train_id is None else item.train_id,
+                _raw_label_text(item),
+                item.mapping_label,
                 bool(item.seen),
                 int(metrics["per_class_count"].get(item.name, 0)),
                 _fmt(_safe_float(iou3d[idx])),
@@ -535,7 +537,7 @@ def _write_metrics_summary_txt(
         )
     lines.extend(
         _format_table(
-            ["id", "label", "raw_id", "seen", "gt_count", "iou3d", "iou2d", "iouensemble", "alpha"],
+            ["id", "label", "raw_label", "mapping_label", "seen", "gt_count", "iou3d", "iou2d", "iouensemble", "alpha"],
             val_rows,
         )
     )
@@ -580,3 +582,11 @@ def _fmt(value, digits=4):
         return f"{float(value):.{digits}f}"
     except (TypeError, ValueError):
         return str(value)
+
+
+def _raw_label_text(item):
+    if not item.raw_labels:
+        return ""
+    if len(item.raw_labels) == 1:
+        return str(item.raw_labels[0])
+    return "[" + ",".join(str(value) for value in item.raw_labels) + "]"
