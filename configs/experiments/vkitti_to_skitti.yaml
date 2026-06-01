@@ -19,6 +19,9 @@ vocabulary:
     - "a driving scene with {}."
   use_aliases: true
 
+mapping:
+  task_mapping_path: configs/mappings/tasks/vkitti_to_skitti.yaml
+
 data:
   use_legacy_unidseg_6class_mapping: false
   ignore_index: -100
@@ -156,6 +159,7 @@ loss:
 semantic_metrics:
   enabled: true
   semantic_threshold: 0.85
+  seen_logit_biases: [0.0, 0.5, 1.0, 1.5, 2.0]
   compute_semantic_similarity: true
   compute_near_miss_accuracy: true
   compute_2d3d_agreement: true

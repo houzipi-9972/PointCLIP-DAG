@@ -42,9 +42,17 @@ def make_prompt_variant_groups(vocabulary, mode="name_only"):
     for item in vocabulary.classes:
         if mode == "aliases_only" and item.aliases:
             phrases = list(item.aliases)
+            template = "a photo of a {}."
+        elif mode == "point_cloud":
+            phrases = [item.name]
+            template = "a point cloud of a {}."
+        elif mode == "driving_scene":
+            phrases = [item.name]
+            template = "a driving scene with {}."
         else:
             phrases = [item.name]
-        groups.append([f"a photo of a {phrase}." for phrase in phrases])
+            template = "a photo of a {}."
+        groups.append([template.format(phrase) for phrase in phrases])
     return groups
 
 

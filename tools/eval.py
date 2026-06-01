@@ -13,7 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
 
 from pointclip_dag.config import load_config
-from pointclip_dag.data import build_dataloader, build_vocabulary, build_vocabulary_from_names
+from pointclip_dag.data import build_dataloader, build_label_mapper, build_vocabulary, build_vocabulary_from_names
 from pointclip_dag.engine import Evaluator
 from pointclip_dag.models import build_model
 from pointclip_dag.utils.checkpoint import load_checkpoint
@@ -48,9 +48,10 @@ def run():
         eval_vocab = build_vocabulary(_resolve(PROJECT_ROOT, vocab_path))
     train_vocab = build_vocabulary(_resolve(PROJECT_ROOT, _train_vocab_path(cfg)))
     probe_vocab = _build_probe_vocab(cfg)
+    label_mapper = build_label_mapper(cfg, PROJECT_ROOT)
     loader = build_dataloader(cfg, "target", cfg.eval.get("test_split", "test"), vocabulary=eval_vocab)
     device = torch.device(cfg.device if torch.cuda.is_available() or cfg.device == "cpu" else "cpu")
-    model = build_model(cfg, vocabulary=eval_vocab).to(device)
+    model = build_model(cfg, vocabulary=eval_vocab, label_mapper=label_mapper).to(device)
     load_checkpoint(args.ckpt, model, map_location=device)
     run_dir = _eval_out_dir(cfg, args)
     logger = build_logger("pointclip_dag_eval", str(run_dir / "eval.log"))

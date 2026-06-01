@@ -310,8 +310,8 @@ By default, evaluation writes metrics next to the checkpoint:
 want a separate evaluation directory.
 
 Evaluation rebuilds text embeddings from `vocabulary.eval_vocab_path`, so the
-evaluation vocabulary can differ from the training vocabulary as long as dataset
-labels are mapped to the desired train IDs. A third
+evaluation vocabulary can differ from the training vocabulary as long as the
+task label mapping can translate target raw labels into that eval vocabulary. A third
 `semantic_probe_vocab_path` can hold richer text probes; it is not used for
 standard GT mIoU.
 
@@ -377,21 +377,39 @@ classes:
 Multiple aliases and prompt templates are encoded and averaged into one
 normalized class text embedding.
 
-`train_id` maps a text class to the raw dataset GT label for CE/mIoU. It is not
-the logits column index. PointCLIP-DAG maps raw dataset labels to active
-vocabulary columns at runtime using `dataset_name + vocab`.
+`train_id` is kept only as human-readable metadata for older configs. It is not
+the logits column index, and it is not the authoritative raw-label mapping.
+PointCLIP-DAG maps raw dataset labels to active vocabulary columns through the
+task mapping files under `configs/mappings/`.
 
-- In a training vocab, classes with `train_id` are supervised by CE.
+- In a training vocab, classes covered by the task mapping are supervised by CE.
 - Labels not present in the active training vocab are ignored for CE.
-- In an eval vocab, classes with `train_id` can contribute to mIoU.
+- In an eval vocab, classes covered by the target dataset mapping can contribute to mIoU.
 - Classes with `train_id: null` are valid open-vocabulary text queries, but do
-  not contribute to mIoU because there is no GT label to compare against.
+  not contribute to mIoU unless the task mapping maps a raw GT label to them.
 
 Validate a custom yaml before running:
 
 ```bash
 python pointclip_dag/scripts/check_vocab.py configs/vocab/vkitti_skitti/semantic_kitti_gt_aligned_19.yaml
 ```
+
+Validate the raw-label mapping before training:
+
+```bash
+python tools/check_mapping.py --config configs/experiments/vkitti_to_skitti.yaml --strict
+python tools/print_mapping_summary.py --config configs/experiments/vkitti_to_skitti.yaml
+```
+
+The mapping chain is explicit:
+
+```text
+dataset raw label id -> canonical class name -> active vocab class name -> dynamic vocab column id
+```
+
+This prevents UniDSeg's legacy six shared classes or any dataset-specific raw
+IDs from silently becoming the PointCLIP-DAG output space. `semantic_probe_vocab`
+is intentionally diagnostic only; it is not forced into standard mIoU.
 
 List all available vocab banks:
 

@@ -1,0 +1,46 @@
+dataset: semantic_kitti
+aliases:
+  - SemanticKITTIRawSCN
+  - SemanticKITTISCN
+ignore_names:
+  - unlabeled
+  - outlier
+  - on rails
+  - other structure
+  - lane marking
+  - other object
+raw_labels:
+  0: unlabeled
+  1: outlier
+  10: car
+  11: bicycle
+  13: other vehicle
+  15: motorcycle
+  16: on rails
+  18: truck
+  20: other vehicle
+  30: person
+  31: bicyclist
+  32: motorcyclist
+  40: road
+  44: parking
+  48: sidewalk
+  49: other ground
+  50: building
+  51: fence
+  52: other structure
+  60: road
+  70: vegetation
+  71: trunk
+  72: terrain
+  80: pole
+  81: traffic sign
+  99: other object
+  252: car
+  253: bicyclist
+  254: person
+  255: motorcyclist
+  256: on rails
+  257: other vehicle
+  258: truck
+  259: other vehicle

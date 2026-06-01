@@ -1,0 +1,18 @@
+name: nuscenes_eval_to_vocab
+canonical_to_vocab:
+  barrier: barrier
+  bicycle: bicycle
+  bus: bus
+  car: car
+  construction vehicle: construction vehicle
+  motorcycle: motorcycle
+  pedestrian: pedestrian
+  traffic cone: traffic cone
+  trailer: trailer
+  truck: truck
+  driveable surface: driveable surface
+  other flat: other flat
+  sidewalk: sidewalk
+  terrain: terrain
+  manmade: manmade
+  vegetation: vegetation

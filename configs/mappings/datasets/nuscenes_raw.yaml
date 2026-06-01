@@ -1,0 +1,23 @@
+dataset: nuscenes
+aliases:
+  - NuScenesLidarSegSCN
+ignore_names:
+  - ignore
+raw_labels:
+  0: ignore
+  1: barrier
+  2: bicycle
+  3: bus
+  4: car
+  5: construction vehicle
+  6: motorcycle
+  7: pedestrian
+  8: traffic cone
+  9: trailer
+  10: truck
+  11: driveable surface
+  12: other flat
+  13: sidewalk
+  14: terrain
+  15: manmade
+  16: vegetation

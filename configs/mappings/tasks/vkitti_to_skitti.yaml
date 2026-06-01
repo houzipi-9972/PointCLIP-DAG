@@ -1,0 +1,19 @@
+task: vkitti_to_skitti
+source_dataset: virtual_kitti
+target_dataset: semantic_kitti
+datasets:
+  virtual_kitti: configs/mappings/datasets/virtual_kitti_raw.yaml
+  semantic_kitti: configs/mappings/datasets/semantic_kitti_raw.yaml
+vocab_maps:
+  train: configs/mappings/vocab_maps/vkitti_train_to_vocab.yaml
+  eval: configs/mappings/vocab_maps/semantic_kitti_eval_to_vocab.yaml
+  semantic_probe: configs/mappings/vocab_maps/semantic_kitti_eval_to_vocab.yaml
+dataset_vocab_map:
+  virtual_kitti:
+    train: train
+    eval: train
+    semantic_probe: train
+  semantic_kitti:
+    train: eval
+    eval: eval
+    semantic_probe: semantic_probe

@@ -13,6 +13,9 @@ vocabulary:
     - "a point cloud of a {}."
     - "a driving scene with {}."
 
+mapping:
+  task_mapping_path: configs/mappings/tasks/nuscenes_usa_to_singapore.yaml
+
 data:
   use_legacy_unidseg_6class_mapping: false
   ignore_index: -100

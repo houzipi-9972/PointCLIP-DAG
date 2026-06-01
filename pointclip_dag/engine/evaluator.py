@@ -56,6 +56,18 @@ class Evaluator:
         gt_hist = np.zeros(self.vocabulary.num_classes, dtype=np.int64)
         pred2d_hist = np.zeros(self.vocabulary.num_classes, dtype=np.int64)
         gt2d_hist = np.zeros(self.vocabulary.num_classes, dtype=np.int64)
+        logit_sum = np.zeros(self.vocabulary.num_classes, dtype=np.float64)
+        logit_count = 0
+        unseen_topk_hits = {1: np.zeros(self.vocabulary.num_classes, dtype=np.int64), 3: np.zeros(self.vocabulary.num_classes, dtype=np.int64), 5: np.zeros(self.vocabulary.num_classes, dtype=np.int64)}
+        unseen_gt_count = np.zeros(self.vocabulary.num_classes, dtype=np.int64)
+        probe_hist = None
+        probe_hist_2d = None
+        probe_names = []
+        probe_text = None
+        if self.semantic_probe_vocabulary is not None:
+            probe_names = self.semantic_probe_vocabulary.names
+            probe_hist = np.zeros(self.semantic_probe_vocabulary.num_classes, dtype=np.int64)
+            probe_hist_2d = np.zeros(self.semantic_probe_vocabulary.num_classes, dtype=np.int64)
         ignored_points = 0
         total_points = 0
         projected_points = 0
@@ -75,8 +87,18 @@ class Evaluator:
         )
         agreement_acc = Agreement2D3DAccumulator(temperature=float(self.cfg.loss.get("temperature", 2.0)))
         prompt_acc = PromptConsistencyAccumulator()
+        prompt_variant_accs = {
+            "aliases_only": PromptConsistencyAccumulator(),
+            "point_cloud": PromptConsistencyAccumulator(),
+            "driving_scene": PromptConsistencyAccumulator(),
+        }
         prompt_batches = int(sem_cfg.get("prompt_consistency_num_batches", 10))
         prompt_groups = make_prompt_variant_groups(self.vocabulary)
+        seen_biases = [float(value) for value in sem_cfg.get("seen_logit_biases", [])]
+        meter_seen_bias = {
+            bias: IoUMeter(self.vocabulary.num_classes, ignore_index=self.cfg.loss.ignore_index)
+            for bias in seen_biases
+        }
 
         for step, batch in enumerate(self.dataloader):
             batch = move_to_device(batch, self.device)
@@ -93,6 +115,29 @@ class Evaluator:
             if valid_labels.any():
                 gt_hist += np.bincount(labels[valid_labels].astype(np.int64), minlength=self.vocabulary.num_classes)
                 pred_hist += np.bincount(pred3d[valid_labels].astype(np.int64), minlength=self.vocabulary.num_classes)
+                logit_sum += logits3d_t.detach().cpu().numpy()[valid_labels].sum(axis=0)
+                logit_count += int(valid_labels.sum())
+                _accumulate_unseen_topk(
+                    unseen_topk_hits,
+                    unseen_gt_count,
+                    logits3d_t,
+                    labels_t,
+                    self.vocabulary.seen_mask.to(device=labels_t.device),
+                    int(self.cfg.loss.ignore_index),
+                )
+                for bias, meter in meter_seen_bias.items():
+                    calibrated = _apply_seen_bias(logits3d_t, self.vocabulary.seen_mask.to(logits3d_t.device), bias)
+                    meter.update(calibrated.argmax(dim=-1).detach().cpu().numpy(), labels)
+                if probe_hist is not None:
+                    if probe_text is None:
+                        probe_text = self.model.text_encoder.encode_groups(
+                            self.semantic_probe_vocabulary.class_text_groups(),
+                            device=self.device,
+                        )
+                        probe_text = torch.nn.functional.normalize(probe_text, dim=-1)
+                    probe_logits = float(self.cfg.loss.get("logit_scale", 20.0)) * outputs["z3d"] @ probe_text.t()
+                    probe_pred = probe_logits.argmax(dim=-1).detach().cpu().numpy()
+                    probe_hist += np.bincount(probe_pred[valid_labels].astype(np.int64), minlength=len(probe_names))
             if sem_enabled and sem_cfg.get("compute_semantic_similarity", True):
                 semantic_acc.update(
                     pred3d_t,
@@ -106,6 +151,12 @@ class Evaluator:
                 alt_text = torch.nn.functional.normalize(alt_text, dim=-1)
                 alt_logits = float(self.cfg.loss.get("logit_scale", 20.0)) * outputs["z3d"] @ alt_text.t()
                 prompt_acc.update(logits3d_t, alt_logits, labels_t, int(self.cfg.loss.ignore_index))
+                for variant_name, variant_acc in prompt_variant_accs.items():
+                    variant_groups = make_prompt_variant_groups(self.vocabulary, mode=variant_name)
+                    variant_text = self.model.text_encoder.encode_groups(variant_groups, device=self.device)
+                    variant_text = torch.nn.functional.normalize(variant_text, dim=-1)
+                    variant_logits = float(self.cfg.loss.get("logit_scale", 20.0)) * outputs["z3d"] @ variant_text.t()
+                    variant_acc.update(logits3d_t, variant_logits, labels_t, int(self.cfg.loss.ignore_index))
 
             valid_mask = outputs["valid_point_mask"]
             if valid_mask.numel() == labels.shape[0] and valid_mask.any():
@@ -142,6 +193,19 @@ class Evaluator:
                         pred2d[valid_2d_labels].astype(np.int64),
                         minlength=self.vocabulary.num_classes,
                     )
+                    if probe_hist_2d is not None:
+                        if probe_text is None:
+                            probe_text = self.model.text_encoder.encode_groups(
+                                self.semantic_probe_vocabulary.class_text_groups(),
+                                device=self.device,
+                            )
+                            probe_text = torch.nn.functional.normalize(probe_text, dim=-1)
+                        probe_logits_2d = float(self.cfg.loss.get("logit_scale", 20.0)) * outputs["z2d_points"] @ probe_text.t()
+                        probe_pred_2d = probe_logits_2d.argmax(dim=-1).detach().cpu().numpy()
+                        probe_hist_2d += np.bincount(
+                            probe_pred_2d[valid_2d_labels].astype(np.int64),
+                            minlength=len(probe_names),
+                        )
 
             if pred_dir is not None:
                 np.save(pred_dir / f"batch_{step:06d}_pred3d.npy", pred3d)
@@ -205,6 +269,9 @@ class Evaluator:
             metrics.update(semantic_acc.compute(self.vocabulary.names))
             metrics.update(agreement_acc.compute())
             metrics.update(prompt_acc.compute())
+            for variant_name, variant_acc in prompt_variant_accs.items():
+                for key, value in variant_acc.compute().items():
+                    metrics[f"{key}_{variant_name}"] = value
             metrics["semantic_threshold"] = float(sem_cfg.get("semantic_threshold", 0.85))
             metrics.update(text_similarity_baseline(self.model.encode_text(self.device)))
             metrics["semantic_confusions"] = semantic_confusions(
@@ -213,10 +280,27 @@ class Evaluator:
                 self.vocabulary.names,
                 topk=int(sem_cfg.get("topk_confusions", 5)),
             )
+            metrics.update(_unseen_topk_metrics(unseen_topk_hits, unseen_gt_count, self.vocabulary.names))
+            metrics["class_logit_mean_3d"] = {
+                name: _safe_float(logit_sum[idx] / max(logit_count, 1)) for idx, name in enumerate(self.vocabulary.names)
+            }
+            for bias, meter in meter_seen_bias.items():
+                biased = meter.compute(self.vocabulary.seen_mask.cpu().numpy())
+                metrics[f"mIoU_seen_bias_{bias}"] = biased["all_miou"]
         else:
             metrics.update(_empty_semantic_metrics())
         if self.semantic_probe_vocabulary is not None:
             metrics["semantic_probe_vocab_classes"] = self.semantic_probe_vocabulary.names
+            if probe_hist is not None:
+                metrics["semantic_probe_pred_hist_3d"] = {
+                    name: int(probe_hist[idx]) for idx, name in enumerate(probe_names)
+                }
+                metrics["semantic_probe_top_classes_3d"] = _top_hist_items(probe_hist, probe_names, topk=10)
+            if probe_hist_2d is not None:
+                metrics["semantic_probe_pred_hist_2d_projected"] = {
+                    name: int(probe_hist_2d[idx]) for idx, name in enumerate(probe_names)
+                }
+                metrics["semantic_probe_top_classes_2d_projected"] = _top_hist_items(probe_hist_2d, probe_names, topk=10)
         if self.out_dir is not None:
             self.out_dir.mkdir(parents=True, exist_ok=True)
             with open(self.out_dir / "metrics.json", "w", encoding="utf-8") as handle:
@@ -330,6 +414,50 @@ def _empty_semantic_metrics():
     }
 
 
+def _apply_seen_bias(logits, seen_mask, bias):
+    calibrated = logits.clone()
+    calibrated[:, seen_mask] = calibrated[:, seen_mask] - float(bias)
+    return calibrated
+
+
+def _accumulate_unseen_topk(hit_tables, gt_count, logits, labels, seen_mask, ignore_index):
+    valid = (labels != ignore_index) & (labels >= 0) & (labels < seen_mask.numel())
+    if valid.numel() == 0 or not bool(valid.any()):
+        return
+    safe_labels = labels.clamp(min=0, max=seen_mask.numel() - 1)
+    unseen = valid & (~seen_mask[safe_labels])
+    if not bool(unseen.any()):
+        return
+    labels_unseen = labels[unseen].detach().cpu().numpy().astype(np.int64)
+    for class_idx, count in zip(*np.unique(labels_unseen, return_counts=True)):
+        gt_count[int(class_idx)] += int(count)
+    max_k = min(max(hit_tables), logits.shape[1])
+    topk = logits[unseen].topk(max_k, dim=-1).indices
+    labels_unseen_t = labels[unseen].view(-1, 1)
+    for k, table in hit_tables.items():
+        kk = min(k, topk.shape[1])
+        hits = topk[:, :kk].eq(labels_unseen_t).any(dim=-1).detach().cpu().numpy()
+        for class_idx in np.unique(labels_unseen):
+            mask = labels_unseen == int(class_idx)
+            table[int(class_idx)] += int(hits[mask].sum())
+
+
+def _unseen_topk_metrics(hit_tables, gt_count, names):
+    metrics = {}
+    unseen_total = int(gt_count.sum())
+    for k, table in hit_tables.items():
+        metrics[f"unseen_top{k}_recall"] = float(table.sum() / max(unseen_total, 1))
+        metrics[f"unseen_top{k}_recall_per_class"] = {
+            name: (0.0 if gt_count[idx] == 0 else float(table[idx] / gt_count[idx])) for idx, name in enumerate(names)
+        }
+    return metrics
+
+
+def _top_hist_items(hist, names, topk=10):
+    order = np.argsort(-hist)[:topk]
+    return [{"label": names[int(idx)], "count": int(hist[int(idx)])} for idx in order if int(hist[int(idx)]) > 0]
+
+
 def _write_metrics_summary_txt(
     path,
     metrics,
@@ -359,6 +487,10 @@ def _write_metrics_summary_txt(
         ("best_ensemble_mIoU", metrics.get("best_ensemble_mIoU", 0.0)),
         ("valid_projected_point_ratio", metrics.get("valid_projected_point_ratio", 0.0)),
         ("ignored_projected_label_ratio", metrics.get("ignored_projected_label_ratio", 0.0)),
+        ("unseen_top1_recall", metrics.get("unseen_top1_recall", 0.0)),
+        ("unseen_top3_recall", metrics.get("unseen_top3_recall", 0.0)),
+        ("unseen_top5_recall", metrics.get("unseen_top5_recall", 0.0)),
+        ("prompt_top1_consistency", metrics.get("prompt_top1_consistency", 0.0)),
     ]
     lines.extend(_format_table(["metric", "value"], [(name, _fmt(value)) for name, value in overall_rows]))
     lines.append("")
@@ -416,6 +548,13 @@ def _write_metrics_summary_txt(
         sweep_rows.append((alpha, _fmt(result_ens[alpha]["all_miou"])))
     lines.extend(_format_table(["alpha", "mIoU"], sweep_rows))
     lines.append("")
+
+    if metrics.get("semantic_probe_top_classes_3d"):
+        lines.append("Semantic Probe Top Classes")
+        lines.append("-" * 80)
+        probe_rows = [(item["label"], item["count"]) for item in metrics["semantic_probe_top_classes_3d"]]
+        lines.extend(_format_table(["label", "count"], probe_rows))
+        lines.append("")
 
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

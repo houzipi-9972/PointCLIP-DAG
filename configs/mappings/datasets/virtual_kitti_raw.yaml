@@ -1,0 +1,23 @@
+dataset: virtual_kitti
+aliases:
+  - VirtualKITTIRawSCN
+  - VirtualKITTISCN
+ignore_names:
+  - dont care
+  - misc
+raw_labels:
+  0: terrain
+  1: tree
+  2: vegetation
+  3: building
+  4: road
+  5: guardrail
+  6: traffic sign
+  7: traffic light
+  8: pole
+  9: misc
+  10: truck
+  11: car
+  12: van
+  13: dont care
+  99: dont care
