@@ -14,7 +14,7 @@ vocabulary:
     - "a driving scene with {}."
 
 mapping:
-  task_mapping_path: configs/mappings/tasks/nuscenes_day_to_night.yaml
+  task_mapping_path: configs/mappings/nuscenes_day_to_night.yaml
 
 data:
   use_legacy_unidseg_6class_mapping: false

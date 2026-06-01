@@ -1,0 +1,45 @@
+task: nuscenes_usa_to_singapore
+source_dataset: nuscenes
+target_dataset: nuscenes
+notes:
+  - "Self-contained nuScenes lidarseg mapping."
+  - "Local lidarseg .bin exploration found raw ids 0-31. They are mapped to the 16-class nuScenes vocab used by this project."
+label_spaces:
+  nuscenes:
+    dataset: nuscenes
+    aliases: [NuScenesLidarSegSCN]
+    observed_from: /home/zhangshuai/Sysu_4T/houych/nuscenes/nuScenes-lidarseg-all-v1.0/lidarseg/**/*.bin
+    ignore_names: [noise, animal, debris, pushable pullable, bicycle rack, ambulance, police vehicle, static other, ego vehicle]
+    raw_labels:
+      0: {name: noise, observed_count: 676572, maps: {}}
+      1: {name: animal, observed_count: 1746, maps: {}}
+      2: {name: pedestrian, observed_count: 741829, maps: {train_vocab: pedestrian, eval_vocab: pedestrian}}
+      3: {name: pedestrian, observed_count: 3683, maps: {train_vocab: pedestrian, eval_vocab: pedestrian}}
+      4: {name: pedestrian, observed_count: 47000, maps: {train_vocab: pedestrian, eval_vocab: pedestrian}}
+      5: {name: pedestrian, observed_count: 6605, maps: {train_vocab: pedestrian, eval_vocab: pedestrian}}
+      6: {name: pedestrian, observed_count: 2125, maps: {train_vocab: pedestrian, eval_vocab: pedestrian}}
+      7: {name: pedestrian, observed_count: 2508, maps: {train_vocab: pedestrian, eval_vocab: pedestrian}}
+      8: {name: pedestrian, observed_count: 3416, maps: {train_vocab: pedestrian, eval_vocab: pedestrian}}
+      9: {name: barrier, observed_count: 3076470, maps: {train_vocab: barrier, eval_vocab: barrier}}
+      10: {name: debris, observed_count: 23067, maps: {}}
+      11: {name: pushable pullable, observed_count: 226600, maps: {}}
+      12: {name: traffic cone, observed_count: 244048, maps: {train_vocab: traffic cone, eval_vocab: traffic cone}}
+      13: {name: bicycle rack, observed_count: 56848, maps: {}}
+      14: {name: bicycle, observed_count: 47808, maps: {train_vocab: bicycle, eval_vocab: bicycle}}
+      15: {name: bus, observed_count: 198939, maps: {train_vocab: bus, eval_vocab: bus}}
+      16: {name: bus, observed_count: 1385080, maps: {train_vocab: bus, eval_vocab: bus}}
+      17: {name: car, observed_count: 13098712, maps: {train_vocab: car, eval_vocab: car}}
+      18: {name: construction vehicle, observed_count: 529373, maps: {train_vocab: construction vehicle, eval_vocab: construction vehicle}}
+      19: {name: ambulance, observed_count: 768, maps: {}}
+      20: {name: police vehicle, observed_count: 20121, maps: {}}
+      21: {name: motorcycle, observed_count: 149657, maps: {train_vocab: motorcycle, eval_vocab: motorcycle}}
+      22: {name: trailer, observed_count: 1647268, maps: {train_vocab: trailer, eval_vocab: trailer}}
+      23: {name: truck, observed_count: 5458579, maps: {train_vocab: truck, eval_vocab: truck}}
+      24: {name: driveable surface, observed_count: 107683857, maps: {train_vocab: driveable surface, eval_vocab: driveable surface}}
+      25: {name: other flat, observed_count: 2943434, maps: {train_vocab: other flat, eval_vocab: other flat}}
+      26: {name: sidewalk, observed_count: 23964392, maps: {train_vocab: sidewalk, eval_vocab: sidewalk}}
+      27: {name: terrain, observed_count: 23665643, maps: {train_vocab: terrain, eval_vocab: terrain}}
+      28: {name: manmade, observed_count: 60250102, maps: {train_vocab: manmade, eval_vocab: manmade}}
+      29: {name: static other, observed_count: 275361, maps: {}}
+      30: {name: vegetation, observed_count: 41752584, maps: {train_vocab: vegetation, eval_vocab: vegetation}}
+      31: {name: ego vehicle, observed_count: 114429181, maps: {}}

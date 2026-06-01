@@ -31,7 +31,7 @@ def _print_table(title, rows):
     print("")
     print(title)
     print("=" * len(title))
-    headers = ["raw_id", "canonical", "vocab_name", "vocab_id", "ignored"]
+    headers = ["raw_id", "canonical", "observed_count", "vocab_name", "vocab_id", "ignored"]
     table = [[row.get(key, "") for key in headers] for row in rows]
     print("\n".join(_format_table(headers, table)))
 

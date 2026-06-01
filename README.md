@@ -397,6 +397,7 @@ python pointclip_dag/scripts/check_vocab.py configs/vocab/vkitti_skitti/semantic
 Validate the raw-label mapping before training:
 
 ```bash
+python tools/inspect_raw_labels.py --dataset semantic_kitti --root /home/zhangshuai/Sysu_4T/houych/SemanticKITTI --limit 200
 python tools/check_mapping.py --config configs/experiments/vkitti_to_skitti.yaml --strict
 python tools/print_mapping_summary.py --config configs/experiments/vkitti_to_skitti.yaml
 ```
@@ -410,6 +411,11 @@ dataset raw label id -> canonical class name -> active vocab class name -> dynam
 This prevents UniDSeg's legacy six shared classes or any dataset-specific raw
 IDs from silently becoming the PointCLIP-DAG output space. `semantic_probe_vocab`
 is intentionally diagnostic only; it is not forced into standard mIoU.
+
+The mapping layout is deliberately flat: each task has one yaml file, for
+example `configs/mappings/vkitti_to_skitti.yaml`. It contains the source raw
+labels, target raw labels, observed counts when available, and the map into each
+vocab role. There are no separate dataset/vocab-map subdirectories.
 
 List all available vocab banks:
 

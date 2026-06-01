@@ -18,6 +18,7 @@ class DatasetLabelSpace:
     aliases: tuple[str, ...]
     raw_to_canonical: dict[int, str]
     ignore_names: tuple[str, ...]
+    raw_counts: dict[int, int]
 
     def matches(self, dataset_name: str) -> bool:
         name = norm_name(dataset_name)
@@ -46,17 +47,22 @@ class TaskLabelMapper:
         with open(self.task_mapping_path, "r", encoding="utf-8") as handle:
             raw = yaml.safe_load(handle) or {}
         self.task_name = raw.get("task", self.task_mapping_path.stem)
-        self.dataset_spaces = {
-            key: _load_dataset_space(_resolve(project_root, path))
-            for key, path in raw.get("datasets", {}).items()
-        }
-        self.vocab_maps = {
-            key: _load_vocab_map(_resolve(project_root, path))
-            for key, path in raw.get("vocab_maps", {}).items()
-        }
-        self.dataset_vocab_map = raw.get("dataset_vocab_map", {})
-        self.source_dataset = raw.get("source_dataset", "")
-        self.target_dataset = raw.get("target_dataset", "")
+        if "label_spaces" in raw:
+            self.dataset_spaces, self.vocab_maps, self.dataset_vocab_map = _parse_flat_task_mapping(raw)
+            self.source_dataset = raw.get("source_dataset", "")
+            self.target_dataset = raw.get("target_dataset", "")
+        else:
+            self.dataset_spaces = {
+                key: _load_dataset_space(_resolve(project_root, path))
+                for key, path in raw.get("datasets", {}).items()
+            }
+            self.vocab_maps = {
+                key: _load_vocab_map(_resolve(project_root, path))
+                for key, path in raw.get("vocab_maps", {}).items()
+            }
+            self.dataset_vocab_map = raw.get("dataset_vocab_map", {})
+            self.source_dataset = raw.get("source_dataset", "")
+            self.target_dataset = raw.get("target_dataset", "")
         self._cache: dict[tuple[str, tuple[str, ...], int], torch.Tensor] = {}
         if not self.dataset_spaces:
             raise ValueError(f"No datasets defined in task mapping: {self.task_mapping_path}")
@@ -139,6 +145,7 @@ class TaskLabelMapper:
                     "canonical": canonical,
                     "vocab_name": vocab_name,
                     "vocab_id": "" if vocab_id is None else int(vocab_id),
+                    "observed_count": int(space.raw_counts.get(raw_id, 0)),
                     "ignored": bool(ignored),
                 }
             )
@@ -176,6 +183,7 @@ def _load_dataset_space(path: Path) -> DatasetLabelSpace:
         aliases=tuple(raw.get("aliases", [])),
         raw_to_canonical=raw_labels,
         ignore_names=tuple(raw.get("ignore_names", [])),
+        raw_counts={},
     )
 
 
@@ -184,6 +192,44 @@ def _load_vocab_map(path: Path) -> VocabMap:
         raw = yaml.safe_load(handle) or {}
     mapping = {norm_name(key): str(value) for key, value in raw.get("canonical_to_vocab", {}).items()}
     return VocabMap(name=str(raw.get("name", path.stem)), canonical_to_vocab=mapping)
+
+
+def _parse_flat_task_mapping(raw: dict) -> tuple[dict[str, DatasetLabelSpace], dict[str, VocabMap], dict[str, dict]]:
+    dataset_spaces: dict[str, DatasetLabelSpace] = {}
+    vocab_maps: dict[str, VocabMap] = {}
+    dataset_vocab_map: dict[str, dict] = {}
+    for dataset_key, dataset_raw in raw.get("label_spaces", {}).items():
+        raw_labels = dataset_raw.get("raw_labels", {})
+        canonical = {}
+        role_maps: dict[str, dict[str, str]] = {}
+        for raw_id, item in raw_labels.items():
+            if isinstance(item, str):
+                name = item
+                maps = {}
+            else:
+                name = str(item.get("name", ""))
+                maps = item.get("maps", {})
+            canonical[int(raw_id)] = name
+            for role, vocab_name in maps.items():
+                role_key = role.replace("_vocab", "")
+                role_maps.setdefault(role_key, {})[norm_name(name)] = str(vocab_name)
+        dataset_spaces[dataset_key] = DatasetLabelSpace(
+            key=str(dataset_raw.get("dataset", dataset_key)),
+            aliases=tuple(dataset_raw.get("aliases", [])),
+            raw_to_canonical=canonical,
+            ignore_names=tuple(dataset_raw.get("ignore_names", [])),
+            raw_counts={
+                int(raw_id): int(item.get("observed_count", 0))
+                for raw_id, item in raw_labels.items()
+                if isinstance(item, dict) and item.get("observed_count", None) is not None
+            },
+        )
+        dataset_vocab_map[dataset_key] = {}
+        for role, mapping in role_maps.items():
+            map_key = f"{dataset_key}_{role}"
+            vocab_maps[map_key] = VocabMap(name=map_key, canonical_to_vocab=mapping)
+            dataset_vocab_map[dataset_key][role] = map_key
+    return dataset_spaces, vocab_maps, dataset_vocab_map
 
 
 def _vocab_lookup(vocabulary) -> dict[str, int]:
